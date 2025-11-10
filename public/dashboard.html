@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="dashboard">
+    <div class="wallet-balance">
+      Wallet: $<span id="wallet">0</span>
+    </div>
+
+    <div class="container">
+      <div class="profile-card">
+        <h2>User Profile</h2>
+        <p><strong>Name:</strong> <span id="name"></span></p>
+        <p><strong>UserID:</strong> <span id="userid"></span></p>
+        <p><strong>Email:</strong> <span id="email"></span></p>
+
+        <button id="start-earn-btn" class="earn-btn">Start Earn</button>
+        <button id="withdraw-btn" class="withdraw-btn">Withdrawal Request</button>
+      </div>
+
+      <div class="nav-links">
+        <a href="/dashboard.html" class="nav-btn active">Start Page</a>
+        <a href="/withdrawal.html" class="nav-btn">Withdrawal Requests</a>
+      </div>
+
+      <button id="logout-btn" class="logout-btn">Logout</button>
+    </div>
+  </div>
+
+  <script src="js/script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = '/';
+        return;
+      }
+
+      try {
+        const res = await fetch('/.netlify/functions/check', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        if (!data.loggedIn) {
+          localStorage.removeItem('token');
+          window.location.href = '/';
+          return;
+        }
+
+        document.getElementById('name').textContent = data.user.name;
+        document.getElementById('userid').textContent = data.user.userid;
+        document.getElementById('email').textContent = data.user.email;
+        document.getElementById('wallet').textContent = data.user.wallet;
+      } catch (err) {
+        localStorage.removeItem('token');
+        window.location.href = '/';
+      }
+
+      document.getElementById('logout-btn').addEventListener('click', () => {
+        localStorage.removeItem('token');
+        window.location.href = '/';
+      });
+
+      document.getElementById('start-earn-btn').addEventListener('click', () => {
+        alert('Earning started! (Feature coming soon)');
+      });
+
+      document.getElementById('withdraw-btn').addEventListener('click', () => {
+        window.location.href = '/withdrawal.html';
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "earn-app-netlify",
+  "version": "1.0.0",
+  "description": "Earn app with wallet, withdrawal (deduct on request, refund on reject)",
+  "main": "index.js",
+  "scripts": {
+    "dev": "netlify dev",
+    "deploy": "netlify deploy --prod"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^17.2.3",
+    "jsonwebtoken": "^9.0.0",
+    "mongoose": "^7.0.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  }
+}
