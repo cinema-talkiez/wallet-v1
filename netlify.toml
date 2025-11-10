@@ -3,16 +3,15 @@
   command = ""
 
 [functions]
+  directory = "netlify/functions"   # ← CORRECT PATH
   node_bundler = "esbuild"
 
-  [functions.defaults]
-    timeout = 26
+[[redirects]]
+  from = "/.netlify/functions/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+  force = true
 
 [build.environment]
   MONGODB_URI = "YOUR_MONGODB_ATLAS_URI"
   JWT_SECRET = "your-super-secret-jwt-key-12345"
-
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
