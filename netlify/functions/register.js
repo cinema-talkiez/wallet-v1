@@ -1,4 +1,5 @@
 // netlify/functions/register.js
+// netlify/functions/register.js
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../../backend/models/User');
@@ -11,43 +12,52 @@ exports.handler = async (event) => {
   };
 
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
-  if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method Not Allowed' }) };
+  if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ success: false }) };
 
-  await connectDB();
+  try {
+    await connectDB();
+  } catch (err) {
+    return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Database connection failed' }) };
+  }
 
   let body;
   try {
     body = JSON.parse(event.body);
   } catch (err) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid JSON' }) };
+    return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Invalid JSON' }) };
   }
 
-  const { name, email, password } = body;
+  let { name, email, password } = body;
 
-  // THIS IS THE FIX — PROPER VALIDATION
-  if (!name || name.trim().length === 0) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Name is required' }) };
+  // FIX 1: Proper validation
+  if (!name || name.trim().length < 2) {
+    return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Name is required and must be at least 2 characters' }) };
   }
   if (!email || !password) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Email and password are required' }) };
+    return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Email and password are required' }) };
   }
   if (password.length < 6) {
-    return { statusCode: 400, headers, body: JSON.stringify({ error: 'Password must be at least 6 characters' }) };
+    return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Password must be at least 6 characters' }) };
   }
 
+  name = name.trim();
+  email = email.toLowerCase().trim();
+
   try {
-    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
-    if (existingUser) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: 'User already exists' }) };
+    // Check if user exists
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Email already registered' }) };
     }
 
-    const userid = 'UID' + Date.now().toString().slice(-6) + Math.floor(Math.random() * 99);
+    // Generate unique userid
+    const userid = 'UID' + Date.now().toString().slice(-8);
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = new User({
-      name: name.trim(),
-      email: email.toLowerCase().trim(),
+      name,
+      email,
       password: hashedPassword,
       userid
     });
@@ -67,12 +77,17 @@ exports.handler = async (event) => {
         success: true,
         token,
         redirect: '/dashboard.html',
-        user: { name: user.name, email: user.email, userid: user.userid, wallet: user.wallet }
+        user: {
+          name: user.name,
+          email: user.email,
+          userid: user.userid,
+          wallet: user.wallet
+        }
       })
     };
 
   } catch (err) {
-    console.error('Registration error:', err);
-    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Registration failed' }) };
+    console.error('Register error:', err);
+    return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: 'Registration failed. Please try again.' }) };
   }
 };
